@@ -29,7 +29,7 @@ const Dashboard: React.FC = () => {
     api.get('/foods').then(response => {
       setFoods(response.data);
     });
-  }, [editModalOpen]);
+  }, []);
 
   const handleAddFood = useCallback(
     async (food: Omit<IFoodPlate, 'id' | 'available'>) => {
@@ -47,18 +47,22 @@ const Dashboard: React.FC = () => {
   const handleUpdateFood = useCallback(
     async (food: Omit<IFoodPlate, 'id' | 'available'>) => {
       try {
-        const response = await api.put(`/foods/${editingFood.id}`, food);
-        const newFoods = [...foods];
-        const findIndex = newFoods.findIndex(
-          findFood => findFood.id === editingFood.id,
+        const { data } = await api.put<IFoodPlate>(`/foods/${editingFood.id}`, {
+          id: editingFood.id,
+          available: editingFood.available,
+          ...food,
+        });
+
+        const updateFoods = foods.map(mapFood =>
+          mapFood.id === editingFood.id ? data : mapFood,
         );
-        newFoods[findIndex] = response.data;
-        setFoods(newFoods);
+
+        setFoods(updateFoods);
       } catch (err) {
         console.log(err);
       }
     },
-    [editingFood.id, foods],
+    [editingFood.available, editingFood.id, foods],
   );
 
   const handleDeleteFood = useCallback(
