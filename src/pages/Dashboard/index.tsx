@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import Header from '../../components/Header';
 
@@ -26,44 +26,73 @@ const Dashboard: React.FC = () => {
   const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
-    async function loadFoods(): Promise<void> {
-      // TODO LOAD FOODS
-    }
+    api.get('/foods').then(response => {
+      setFoods(response.data);
+    });
+  }, [editModalOpen]);
 
-    loadFoods();
-  }, []);
+  const handleAddFood = useCallback(
+    async (food: Omit<IFoodPlate, 'id' | 'available'>) => {
+      try {
+        const response = await api.post('/foods', food);
+        const newFoods = [...foods, response.data];
+        setFoods(newFoods);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    [foods],
+  );
 
-  async function handleAddFood(
-    food: Omit<IFoodPlate, 'id' | 'available'>,
-  ): Promise<void> {
-    try {
-      // TODO ADD A NEW FOOD PLATE TO THE API
-    } catch (err) {
-      console.log(err);
-    }
-  }
+  const handleUpdateFood = useCallback(
+    async (food: Omit<IFoodPlate, 'id' | 'available'>) => {
+      try {
+        const response = await api.put(`/foods/${editingFood.id}`, food);
+        const newFoods = [...foods];
+        const findIndex = newFoods.findIndex(
+          findFood => findFood.id === editingFood.id,
+        );
+        newFoods[findIndex] = response.data;
+        setFoods(newFoods);
+      } catch (err) {
+        console.log(err);
+      }
+    },
+    [editingFood.id, foods],
+  );
 
-  async function handleUpdateFood(
-    food: Omit<IFoodPlate, 'id' | 'available'>,
-  ): Promise<void> {
-    // TODO UPDATE A FOOD PLATE ON THE API
-  }
+  const handleDeleteFood = useCallback(
+    async (id: number) => {
+      try {
+        await api.delete(`/foods/${id}`);
+        const newFoods = foods.filter(food => {
+          return food.id !== id;
+        });
 
-  async function handleDeleteFood(id: number): Promise<void> {
-    // TODO DELETE A FOOD PLATE FROM THE API
-  }
+        setFoods(newFoods);
+      } catch (err) {
+        console.log(err);
+      }
+      return {};
+    },
+    [foods],
+  );
 
-  function toggleModal(): void {
+  const toggleModal = useCallback(() => {
     setModalOpen(!modalOpen);
-  }
+  }, [modalOpen]);
 
-  function toggleEditModal(): void {
+  const toggleEditModal = useCallback(() => {
     setEditModalOpen(!editModalOpen);
-  }
+  }, [editModalOpen]);
 
-  function handleEditFood(food: IFoodPlate): void {
-    // TODO SET THE CURRENT EDITING FOOD ID IN THE STATE
-  }
+  const handleEditFood = useCallback(
+    (food: IFoodPlate) => {
+      setEditingFood(food);
+      toggleEditModal();
+    },
+    [toggleEditModal],
+  );
 
   return (
     <>
